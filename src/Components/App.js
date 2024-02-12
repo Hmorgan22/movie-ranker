@@ -54,37 +54,35 @@ export default function App() {
   const [movies, setMovies] = useState(tempMovieData);
   return (
     <>
-      <NavBar movies={movies}></NavBar>
-      <Main movies={movies}></Main>
+      <NavBar>
+        <Logo>Movie Ranker</Logo>
+        <Search></Search>
+        <ResultsFound movies={movies}></ResultsFound>
+      </NavBar>
+      <Main>
+        <ListBox>
+          <MovieList movies={movies}></MovieList>
+        </ListBox>
+        <WatchedBox></WatchedBox>
+      </Main>
     </>
   );
 }
 
-function NavBar({ movies }) {
-  return (
-    <nav className="nav-bar">
-      <Logo>Movie Ranker</Logo>
-      <Search></Search>
-      <ResultsFound movies={movies}></ResultsFound>
-    </nav>
-  );
+function NavBar({ children }) {
+  return <nav className="nav-bar">{children}</nav>;
 }
 
-function Main({ movies }) {
-  return (
-    <main className="main">
-      <ListBox movies={movies}></ListBox>
-      <WatchedBox></WatchedBox>
-    </main>
-  );
+function Main({ children }) {
+  return <main className="main">{children}</main>;
 }
 
-function ListBox({ movies }) {
+function ListBox({ children }) {
   const [isOpen1, setIsOpen1] = useState(true);
   return (
     <div className="box">
       <Button onClick={setIsOpen1} isOpen={isOpen1}></Button>
-      {isOpen1 && <MovieList movies={movies}></MovieList>}
+      {isOpen1 && children}
     </div>
   );
 }
