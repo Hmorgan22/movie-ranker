@@ -1,4 +1,5 @@
 import { useState } from "react";
+import StarRating from "./StarRating";
 
 const tempMovieData = [
   {
@@ -52,6 +53,7 @@ const average = (arr) =>
 
 export default function App() {
   const [movies, setMovies] = useState(tempMovieData);
+  const [watched, setWatched] = useState(tempWatchedData);
   return (
     <>
       <NavBar>
@@ -59,11 +61,16 @@ export default function App() {
         <Search></Search>
         <ResultsFound movies={movies}></ResultsFound>
       </NavBar>
+
       <Main>
-        <ListBox>
+        <Box>
           <MovieList movies={movies}></MovieList>
-        </ListBox>
-        <WatchedBox></WatchedBox>
+        </Box>
+
+        <Box>
+          <WatchedSummary watched={watched}></WatchedSummary>
+          <WatchedList watched={watched}></WatchedList>
+        </Box>
       </Main>
     </>
   );
@@ -77,29 +84,12 @@ function Main({ children }) {
   return <main className="main">{children}</main>;
 }
 
-function ListBox({ children }) {
-  const [isOpen1, setIsOpen1] = useState(true);
+function Box({ children }) {
+  const [isOpen, setIsOpen] = useState(true);
   return (
     <div className="box">
-      <Button onClick={setIsOpen1} isOpen={isOpen1}></Button>
-      {isOpen1 && children}
-    </div>
-  );
-}
-
-function WatchedBox() {
-  const [isOpen2, setIsOpen2] = useState(true);
-  const [watched, setWatched] = useState(tempWatchedData);
-
-  return (
-    <div className="box">
-      <Button onClick={setIsOpen2} isOpen={isOpen2}></Button>
-      {isOpen2 && (
-        <>
-          <WatchedSummary watched={watched}></WatchedSummary>
-          <WatchedList watched={watched}></WatchedList>
-        </>
-      )}
+      <Button onClick={setIsOpen} isOpen={isOpen}></Button>
+      {isOpen && children}
     </div>
   );
 }
@@ -196,6 +186,7 @@ function WatchedMovie({ movie }) {
           <span>{movie.runtime} min</span>
         </p>
       </div>
+      <StarRating size={15} />
     </li>
   );
 }
