@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useMovies } from "../useMovies";
 import StarRating from "./StarRating";
+import { useLocalStorageState } from "../useLocalStorageState";
+import { useKey } from "../useKey";
 
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
@@ -7,16 +10,14 @@ const average = (arr) =>
 const KEY = "bdf8da2c";
 
 export default function App() {
-  const [movies, setMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
 
-  const [watched, setWatched] = useState(function () {
-    const storedValue = localStorage.getItem("watched");
-    return JSON.parse(storedValue);
-  });
+  //custom hook to fetch movie data from the api
+  const { movies, isLoading, error } = useMovies(query, handleCloseMovie);
+
+  //custom hook to load watched movies from local storage
+  const [watched, setWatched] = useLocalStorageState([], "watched");
 
   function handleSelectMovie(id) {
     id === selectedId ? setSelectedId(null) : setSelectedId(id);
@@ -33,59 +34,6 @@ export default function App() {
   function handleDeleteWatched(id) {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
-
-  //stores watched movie list in local storage to persist refreshes
-  useEffect(
-    function () {
-      localStorage.setItem("watched", JSON.stringify(watched));
-    },
-    [watched]
-  );
-
-  useEffect(
-    function () {
-      const controller = new AbortController();
-
-      async function fetchMovies() {
-        try {
-          setIsLoading(true);
-          setError("");
-          const res = await fetch(
-            `http://www.omdbapi.com/?apikey=${KEY}&s=${query}
-        `,
-            { signal: controller.signal }
-          );
-
-          if (!res.ok)
-            throw new Error("Something went wrong with fetching movies");
-
-          const data = await res.json();
-
-          if (data.Response === "False") throw new Error("Movie not found");
-
-          setMovies(data.Search);
-          setError("");
-        } catch (err) {
-          if (err.name !== "AbortError") setError(err.message);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-      //this prevents the query from searching with movie titles under 3 characters long
-      if (query.length < 3) {
-        setMovies([]);
-        setError("");
-        return;
-      }
-      handleCloseMovie();
-      fetchMovies();
-
-      return function () {
-        controller.abort();
-      };
-    },
-    [query]
-  );
 
   return (
     <>
@@ -160,21 +108,11 @@ function Search({ query, setQuery }) {
   const inputEl = useRef(null);
 
   //when pressing enter the program will focus back on the search bar and clear results if the search bar is not already focused
-  useEffect(
-    function () {
-      function callback(e) {
-        if (document.activeElement === inputEl.current) return;
-
-        if (e.code === "Enter") {
-          inputEl.current.focus();
-          setQuery("");
-        }
-      }
-      document.addEventListener("keydown", callback);
-      return () => document.addEventListener("keydown", callback);
-    },
-    [setQuery]
-  );
+  useKey("Enter", function () {
+    if (document.activeElement === inputEl.current) return;
+    inputEl.current.focus();
+    setQuery("");
+  });
 
   return (
     <input
@@ -278,24 +216,8 @@ function MovieDetails({ selectedId, onCloseMovie, handleAddWatched, watched }) {
     onCloseMovie();
   }
 
-  //closes the movie details screen when pressing ESC
-  useEffect(
-    function () {
-      function callback(e) {
-        if (e.code === "Escape") {
-          onCloseMovie();
-        }
-      }
-      //triggers call back function
-      document.addEventListener("keydown", callback);
-
-      //cleanup function to remove event listener from all movie detail components to prevent excessive calls
-      return function () {
-        document.removeEventListener("keydown", callback);
-      };
-    },
-    [onCloseMovie]
-  );
+  //custom hook to close movie summary when pressing escape
+  useKey("Escape", onCloseMovie);
 
   useEffect(
     function () {
